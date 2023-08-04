@@ -1,0 +1,100 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Color = System.Drawing.Color;
+
+// Partial Class可以把一个类切分到不同的文件，这样可以针对Runtime和Editor模式分别实现对应的功能
+public partial class CameraRenderer
+{
+    public void Render(ScriptableRenderContext context, Camera camera)
+    {
+        this._context = context;
+        this._camera = camera;
+
+        PrepareBuffer();
+        PrepareForSceneWindow();
+        if (!Cull()) return;
+        
+        Setup();
+        DrawVisibleGeometry();
+        DrawUnsupportedShaders();
+        DrawGizmos();
+        Submit();
+    }
+
+    void Setup()
+    {
+        // 在ClearRenderTarget之前设置相机属性可以更快
+        _context.SetupCameraProperties(_camera);
+        CameraClearFlags flags = _camera.clearFlags;
+        _cmdBuffer.ClearRenderTarget(
+            flags <= CameraClearFlags.Depth, 
+            flags == CameraClearFlags.Color,
+            flags == CameraClearFlags.Color ? _camera.backgroundColor.linear : UnityEngine.Color.clear);
+        _cmdBuffer.BeginSample(SampleName);
+        ExecuteBuffer();
+    }
+
+    bool Cull()
+    {
+        if (_camera.TryGetCullingParameters(out ScriptableCullingParameters cullingParameters))
+        {
+            _cullingRes = _context.Cull(ref cullingParameters);
+            return true;
+        }
+
+        return false;
+    }
+    
+    void DrawVisibleGeometry()
+    {
+        var sortSettings = new SortingSettings(_camera)
+        {
+            criteria = SortingCriteria.CommonOpaque
+        };
+        var drawSettings = new DrawingSettings(
+            _unlitShaderTagId, sortSettings
+        );
+        
+        var filterSettings = new FilteringSettings(RenderQueueRange.opaque);
+        
+        _context.DrawRenderers(
+            _cullingRes, ref drawSettings, ref filterSettings);
+        
+        _context.DrawSkybox(_camera);
+
+        sortSettings.criteria = SortingCriteria.CommonTransparent;
+        drawSettings.sortingSettings = sortSettings;
+        filterSettings.renderQueueRange = RenderQueueRange.transparent;
+        _context.DrawRenderers(_cullingRes, ref drawSettings, ref filterSettings);
+        
+    }
+
+    void Submit()
+    {
+        _cmdBuffer.EndSample(SampleName);
+        ExecuteBuffer();
+        _context.Submit();
+    }
+
+    void ExecuteBuffer()
+    {
+        _context.ExecuteCommandBuffer(_cmdBuffer);
+        _cmdBuffer.Clear();
+    }
+
+    ScriptableRenderContext _context;
+    Camera _camera;
+    CullingResults _cullingRes;
+
+    const string BufferName = "Render Camera";
+    private CommandBuffer _cmdBuffer = new CommandBuffer
+    {
+        name = BufferName
+    };
+
+    private static ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+}
+
+
