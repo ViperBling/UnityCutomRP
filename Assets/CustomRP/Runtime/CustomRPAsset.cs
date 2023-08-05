@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-
 [CreateAssetMenu(menuName = "Rendering/CustomRP")]
 public class CustomRPAsset : RenderPipelineAsset
 {
@@ -12,5 +11,3 @@ public class CustomRPAsset : RenderPipelineAsset
         return new CustomRenderPipeline();
     }
 }
-
-
