@@ -7,7 +7,9 @@ using Color = System.Drawing.Color;
 // Partial Class可以把一个类切分到不同的文件，这样可以针对Runtime和Editor模式分别实现对应的功能
 public partial class CameraRenderer
 {
-    public void Render(ScriptableRenderContext context, Camera camera)
+    public void Render(
+        ScriptableRenderContext context, Camera camera,
+        bool useDynamicBatching, bool useGPUInstancing)
     {
         this._context = context;
         this._camera = camera;
@@ -17,7 +19,7 @@ public partial class CameraRenderer
         if (!Cull()) return;
         
         Setup();
-        DrawVisibleGeometry();
+        DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
         Submit();
@@ -47,7 +49,7 @@ public partial class CameraRenderer
         return false;
     }
     
-    void DrawVisibleGeometry()
+    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
     {
         var sortSettings = new SortingSettings(_camera)
         {
@@ -55,7 +57,11 @@ public partial class CameraRenderer
         };
         var drawSettings = new DrawingSettings(
             _unlitShaderTagId, sortSettings
-        );
+        )
+        {
+            enableDynamicBatching = useDynamicBatching,
+            enableInstancing = useGPUInstancing
+        };
         
         var filterSettings = new FilteringSettings(RenderQueueRange.opaque);
         
