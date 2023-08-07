@@ -15,6 +15,11 @@ public class PerObjectMaterialProps : MonoBehaviour
             _block = new MaterialPropertyBlock();
         }
         _block.SetColor(_baseColorID, baseColor);
+        _block.SetFloat(_cutoffID, cutoff);
+        if (baseMap != null)
+        {
+            _block.SetTexture(_baseMapID, baseMap);
+        }
         GetComponent<Renderer>().SetPropertyBlock(_block);
     }
 
@@ -25,9 +30,15 @@ public class PerObjectMaterialProps : MonoBehaviour
 
     // 和Shader中的属性标识符对应，根据这个ID来设置对应的属性
     static int _baseColorID = Shader.PropertyToID("_BaseColor");
+    static int _baseMapID = Shader.PropertyToID("_BaseMap");
+    static int _cutoffID = Shader.PropertyToID("_Cutoff");
 
     [SerializeField]
     Color baseColor = Color.white;
+    [SerializeField]
+    Texture baseMap;
+    [SerializeField]
+    float cutoff = 0.5f;
 
     static MaterialPropertyBlock _block;
     

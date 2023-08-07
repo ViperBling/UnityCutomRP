@@ -8,12 +8,12 @@ SAMPLER(sampler_BaseMap);
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-    UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct VSInput
 {
     float3 positionOS : POSITION;
+    float3 normalOS : NORMAL;
     float2 baseUV : TEXCOORD0;
     UNITY_VERTEX_INPUT_INSTANCE_ID      // 对象的InstanceID
 };
@@ -21,11 +21,12 @@ struct VSInput
 struct PSInput
 {
     float4 positionCS : SV_POSITION;
+    float3 normalWS : VAR_NORMAL;
     float2 baseUV : VAR_BASE_UV;        // 可以添加任意未使用的标识符
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-PSInput UnlitPassVertex(VSInput vsIn)
+PSInput LitPassVertex(VSInput vsIn)
 {
     PSInput vsOut;
     // 用宏提取出对象的InstanceID
@@ -35,13 +36,15 @@ PSInput UnlitPassVertex(VSInput vsIn)
     float3 positionWS = TransformObjectToWorld(vsIn.positionOS);
     vsOut.positionCS = TransformWorldToHClip(positionWS);
 
+    vsOut.normalWS = TransformObjectToWorldNormal(vsIn.normalOS);
+
     float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
     vsOut.baseUV = vsIn.baseUV * baseST.xy + baseST.zw;
 
     return vsOut;
 }
 
-float4 UnlitPassFragment(PSInput psIn) : SV_TARGET
+float4 LitPassFragment(PSInput psIn) : SV_TARGET
 {
     // 再次提取
     UNITY_SETUP_INSTANCE_ID(psIn);
@@ -50,9 +53,7 @@ float4 UnlitPassFragment(PSInput psIn) : SV_TARGET
     float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
     float4 base = baseColor * baseMap;
     
-    #if defined(_CLIPPING)
-    clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
-    #endif
+    base.rgb = normalize(psIn.normalWS);
     
     return base;
 }

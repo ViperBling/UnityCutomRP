@@ -62,6 +62,7 @@ public partial class CameraRenderer
             enableDynamicBatching = useDynamicBatching,
             enableInstancing = useGPUInstancing
         };
+        drawSettings.SetShaderPassName(1, _litShaderTagId);
         
         var filterSettings = new FilteringSettings(RenderQueueRange.opaque);
         
@@ -101,6 +102,7 @@ public partial class CameraRenderer
     };
 
     private static ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    private static ShaderTagId _litShaderTagId = new ShaderTagId("CustomLit");
 }
 
 
