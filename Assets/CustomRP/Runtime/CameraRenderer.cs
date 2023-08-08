@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Color = System.Drawing.Color;
 
 // Partial Class可以把一个类切分到不同的文件，这样可以针对Runtime和Editor模式分别实现对应的功能
 public partial class CameraRenderer
@@ -19,6 +18,7 @@ public partial class CameraRenderer
         if (!Cull()) return;
         
         Setup();
+        _lighting.Setup(context, _cullingRes);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -33,7 +33,7 @@ public partial class CameraRenderer
         _cmdBuffer.ClearRenderTarget(
             flags <= CameraClearFlags.Depth, 
             flags == CameraClearFlags.Color,
-            flags == CameraClearFlags.Color ? _camera.backgroundColor.linear : UnityEngine.Color.clear);
+            flags == CameraClearFlags.Color ? _camera.backgroundColor.linear : Color.clear);
         _cmdBuffer.BeginSample(SampleName);
         ExecuteBuffer();
     }
@@ -75,7 +75,6 @@ public partial class CameraRenderer
         drawSettings.sortingSettings = sortSettings;
         filterSettings.renderQueueRange = RenderQueueRange.transparent;
         _context.DrawRenderers(_cullingRes, ref drawSettings, ref filterSettings);
-        
     }
 
     void Submit()
@@ -101,8 +100,10 @@ public partial class CameraRenderer
         name = BufferName
     };
 
-    private static ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
-    private static ShaderTagId _litShaderTagId = new ShaderTagId("CustomLit");
+    static ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId _litShaderTagId = new ShaderTagId("CustomLit");
+
+    Lighting _lighting = new Lighting();
 }
 
 

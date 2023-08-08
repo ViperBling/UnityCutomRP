@@ -70,7 +70,6 @@ partial class CameraRenderer
 #else
     const string SampleName = BufferName;    
 #endif
-    
 }
 
 

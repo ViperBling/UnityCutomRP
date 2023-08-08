@@ -12,5 +12,7 @@ public class CustomRPAsset : RenderPipelineAsset
     }
 
     [SerializeField] 
-    bool useDynamicBatching = true, useGPUInstancing = true, useSRPBatcher = true;
+        bool useDynamicBatching = true,
+        useGPUInstancing = true, 
+        useSRPBatcher = true;
 }

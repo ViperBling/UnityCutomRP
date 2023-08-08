@@ -1,6 +1,10 @@
 #pragma once
 
 #include "../ShaderLibrary/Common.hlsl"
+#include "../ShaderLibrary/Surface.hlsl"
+#include "../ShaderLibrary/Light.hlsl"
+#include "../ShaderLibrary/Lighting.hlsl"
+#include "../ShaderLibrary/BRDF.hlsl"
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
@@ -8,6 +12,8 @@ SAMPLER(sampler_BaseMap);
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
+    UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct VSInput
@@ -52,8 +58,15 @@ float4 LitPassFragment(PSInput psIn) : SV_TARGET
     // 根据InstanceID来取颜色
     float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
     float4 base = baseColor * baseMap;
+
+    Surface surface;
+    surface.normal = normalize(psIn.normalWS);
+    surface.color = base.rgb;
+    surface.alpha = base.a;
+    surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
+    surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+
+    float3 color = GetLighting(surface);
     
-    base.rgb = normalize(psIn.normalWS);
-    
-    return base;
+    return float4(color, surface.alpha);
 }

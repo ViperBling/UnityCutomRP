@@ -13,6 +13,7 @@ public class CustomRenderPipeline : RenderPipeline
         this._useDynamicBatching = useDynamicBatching;
         this._useGPUInstancing = useGPUInstancing;
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
+        GraphicsSettings.lightsUseLinearIntensity = true;
     }
     
     protected override void Render(ScriptableRenderContext context, Camera[] cameras)
