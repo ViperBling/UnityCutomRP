@@ -51,7 +51,7 @@ float4 UnlitPassFragment(PSInput psIn) : SV_TARGET
     float4 base = baseColor * baseMap;
     
     #if defined(_CLIPPING)
-    clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
+        clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
     #endif
     
     return base;

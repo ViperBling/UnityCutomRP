@@ -43,9 +43,9 @@ public class PerObjectMaterialProps : MonoBehaviour
     [SerializeField]
     Texture baseMap;
 
-    [SerializeField]
+    [SerializeField, Range(0.0f, 1.0f)]
         float cutoff = 0.5f,
-        metallic = 0f,
+        metallic = 0.0f,
         smoothness = 0.5f;
 
     static MaterialPropertyBlock _block;

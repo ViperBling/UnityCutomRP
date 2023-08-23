@@ -25,9 +25,11 @@ Shader "CustomRP/Unlit"
             #pragma multi_compile_instancing
             #pragma vertex UnlitPassVertex
             #pragma fragment UnlitPassFragment
-            #include "Assets/CustomRP/Shaders/UnlitPass.hlsl"
+            #include "Assets/CustomRP/ShaderLibrary/UnlitPass.hlsl"
             
             ENDHLSL
         }
     }
+    
+    CustomEditor "CustomShaderGUI"
 }
