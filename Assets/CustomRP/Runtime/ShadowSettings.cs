@@ -1,5 +1,12 @@
 using UnityEngine;
 
+
+/*
+ *  阴影设置类，用于管理阴影各类参数
+ *  TextureSize : 阴影贴图大小
+ *  maxDistance : 最大阴影绘制距离
+ *  Directional : 直射光的阴影配置，单个纹理多阴影贴图
+ */
 [System.Serializable]
 public class ShadowSettings
 {

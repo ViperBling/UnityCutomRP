@@ -10,6 +10,8 @@ public class Lighting
         _buffer.BeginSample(BufferName);
         _shadows.Setup(context, cullingResults, shadowSettings);
         SetupLights();
+        // 光源设置好了就可以开始渲染阴影贴图
+        _shadows.Render();
         _buffer.EndSample(BufferName);
         context.ExecuteCommandBuffer(_buffer);
         _buffer.Clear();
@@ -38,6 +40,12 @@ public class Lighting
     {
         _dirLightColors[index] = visibleLight.finalColor;
         _dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2);
+        _shadows.ReserveDirectionalShadows(visibleLight.light, index);
+    }
+
+    public void Cleanup()
+    {
+        _shadows.Cleanup();
     }
 
     const int MaxDirLightCount = 4;
@@ -57,5 +65,6 @@ public class Lighting
     
     CullingResults _cullingResults;
 
+    // Light类要跟踪阴影，对阴影进行Setup
     Shadows _shadows = new Shadows();
 }

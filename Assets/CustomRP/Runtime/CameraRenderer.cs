@@ -18,11 +18,17 @@ public partial class CameraRenderer
         PrepareForSceneWindow();
         if (!Cull(shadowSettings.maxDistance)) return;
         
-        Setup();
+        // 在常规渲染之前开始渲染阴影
+        _cmdBuffer.BeginSample(SampleName);
+        ExecuteBuffer();
         _lighting.Setup(context, _cullingRes, shadowSettings);
+        _cmdBuffer.EndSample(SampleName);
+        Setup();
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
+        // 清除阴影RT
+        _lighting.Cleanup();
         Submit();
     }
 
