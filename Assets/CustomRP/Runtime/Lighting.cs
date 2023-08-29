@@ -4,10 +4,11 @@ using Unity.Collections;
 
 public class Lighting
 {
-    public void Setup(ScriptableRenderContext context, CullingResults  cullingResults)
+    public void Setup(ScriptableRenderContext context, CullingResults  cullingResults, ShadowSettings shadowSettings)
     {
         _cullingResults = cullingResults;
         _buffer.BeginSample(BufferName);
+        _shadows.Setup(context, cullingResults, shadowSettings);
         SetupLights();
         _buffer.EndSample(BufferName);
         context.ExecuteCommandBuffer(_buffer);
@@ -55,4 +56,6 @@ public class Lighting
     static Vector4[] _dirLightDirections = new Vector4[MaxDirLightCount];
     
     CullingResults _cullingResults;
+
+    Shadows _shadows = new Shadows();
 }

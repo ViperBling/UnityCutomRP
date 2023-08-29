@@ -1,18 +1,51 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
-public class Shadow : MonoBehaviour
+public class Shadows
 {
-    // Start is called before the first frame update
-    void Start()
+    public void Setup(ScriptableRenderContext context, CullingResults cullingResults, ShadowSettings shadowSettings)
     {
-        
+        _context = context;
+        _cullingResults = cullingResults;
+        _settings = shadowSettings;
+
+        _shadowedDirecLightCount = 0;
     }
 
-    // Update is called once per frame
-    void Update()
+    void ExecuteBuffer()
     {
-        
+        _context.ExecuteCommandBuffer(_buffer);
+        _buffer.Clear();
     }
+
+    public void ReserveDirectionalShadows(Light light, int visibleLightIndex)
+    {
+        if (_shadowedDirecLightCount < MaxShadowedDirLightCount)
+        {
+            _shadowedDirectionalLights[_shadowedDirecLightCount++] = new ShadowedDirectionalLight
+            {
+                VisibleLightIndex = visibleLightIndex
+            };
+        }
+    }
+
+    struct ShadowedDirectionalLight
+    {
+        public int VisibleLightIndex;
+    }
+    ShadowedDirectionalLight[] _shadowedDirectionalLights = new ShadowedDirectionalLight[MaxShadowedDirLightCount];
+
+    int _shadowedDirecLightCount;
+    
+    const string BufferName = "Shadows";
+    private CommandBuffer _buffer = new CommandBuffer
+    {
+        name = BufferName
+    };
+
+    ScriptableRenderContext _context;
+    CullingResults _cullingResults;
+    ShadowSettings _settings;
+
+    const int MaxShadowedDirLightCount = 1;
 }

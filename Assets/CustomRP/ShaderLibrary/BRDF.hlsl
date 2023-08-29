@@ -7,6 +7,26 @@ struct BRDF
     float roughness;
 };
 
+struct BxDFContext
+{
+    float NoV;
+    float NoL;
+    float VoL;
+    float NoH;
+    float VoH;
+    float LoH;
+};
+
+void InitBxDFContext(inout BxDFContext Context, float3 N, float3 V, float3 L)
+{
+    Context.NoV = dot(N, V);
+    Context.NoL = dot(N, L);
+    Context.VoL = dot(V, L);
+    float InvLenH = rsqrt(2 + 2 * Context.VoL);
+    Context.NoH = saturate((Context.NoL + Context.NoV) * InvLenH);
+    Context.VoH = saturate(InvLenH + InvLenH * Context.VoL);
+}
+
 #define MIN_REFLECTIVITY 0.04
 
 float OneMinusReflectivity(float metallic)
