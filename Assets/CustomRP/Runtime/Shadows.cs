@@ -47,14 +47,14 @@ public class Shadows
         int tileSize = atlasSize / split;
         for (int i = 0; i < _shadowedDirectionalLightCount; i++)
         {
-            RenderDirectionalShadows(i, atlasSize);
+            RenderDirectionalShadows(i, split, tileSize);
         }
-        
+        _buffer.SetGlobalMatrixArray(_directionalShadowMatricesID, _directionalShadowMatrices);
         _buffer.EndSample(BufferName);
         ExecuteBuffer();
     }
 
-    void RenderDirectionalShadows(int index, int tileSize)
+    void RenderDirectionalShadows(int index, int split, int tileSize)
     {
         ShadowedDirectionalLight light = _shadowedDirectionalLights[index];
         // 新版本API添加了投射矩阵类型参数
@@ -65,9 +65,45 @@ public class Shadows
             light.VisibleLightIndex, 0, 1, Vector3.zero, tileSize, 0.0f,
             out Matrix4x4 viewMatrix, out Matrix4x4 projMatrix, out ShadowSplitData splitData);
         shadowSettings.splitData = splitData;
+        // 根据每个光源的不同矩阵来分配
+        _directionalShadowMatrices[index] = ConvertToAtlasMatrix(
+            projMatrix * viewMatrix, SetTileViewport(index, split, tileSize), split);
         _buffer.SetViewProjectionMatrices(viewMatrix, projMatrix);
         ExecuteBuffer();
         _context.DrawShadows(ref shadowSettings);
+    }
+
+    Vector2 SetTileViewport(int index, int split, float tileSize)
+    {
+        Vector2 offset = new Vector2(index % split, index / split);
+        _buffer.SetViewport(new Rect(
+            offset.x * tileSize, offset.y * tileSize, tileSize, tileSize));
+        return offset;
+    }
+
+    Matrix4x4 ConvertToAtlasMatrix(Matrix4x4 mat, Vector2 offset, int split)
+    {
+        if (SystemInfo.usesReversedZBuffer) {
+            mat.m20 = -mat.m20;
+            mat.m21 = -mat.m21;
+            mat.m22 = -mat.m22;
+            mat.m23 = -mat.m23;
+        }
+        float scale = 1f / split;
+        mat.m00 = (0.5f * (mat.m00 + mat.m30) + offset.x * mat.m30) * scale;
+        mat.m01 = (0.5f * (mat.m01 + mat.m31) + offset.x * mat.m31) * scale;
+        mat.m02 = (0.5f * (mat.m02 + mat.m32) + offset.x * mat.m32) * scale;
+        mat.m03 = (0.5f * (mat.m03 + mat.m33) + offset.x * mat.m33) * scale;
+        mat.m10 = (0.5f * (mat.m10 + mat.m30) + offset.y * mat.m30) * scale;
+        mat.m11 = (0.5f * (mat.m11 + mat.m31) + offset.y * mat.m31) * scale;
+        mat.m12 = (0.5f * (mat.m12 + mat.m32) + offset.y * mat.m32) * scale;
+        mat.m13 = (0.5f * (mat.m13 + mat.m33) + offset.y * mat.m33) * scale;
+        mat.m20 = 0.5f * (mat.m20 + mat.m30);
+        mat.m21 = 0.5f * (mat.m21 + mat.m31);
+        mat.m22 = 0.5f * (mat.m22 + mat.m32);
+        mat.m23 = 0.5f * (mat.m23 + mat.m33);
+        
+        return mat;
     }
 
     void ExecuteBuffer()
@@ -77,18 +113,22 @@ public class Shadows
     }
 
     // 获取哪些光源会产生阴影
-    public void ReserveDirectionalShadows(Light light, int visibleLightIndex)
+    public Vector2 ReserveDirectionalShadows(Light light, int visibleLightIndex)
     {
         // 判断条件：光源可以投射阴影且阴影强度大于0 && GetShadowCasterBounds检查光源是否在阴影投射范围
         if (_shadowedDirectionalLightCount < MaxShadowedDirLightCount &&
             light.shadows != LightShadows.None && light.shadowStrength > 0f &&
             _cullingResults.GetShadowCasterBounds(visibleLightIndex, out Bounds bounds))
         {
-            _shadowedDirectionalLights[_shadowedDirectionalLightCount++] = new ShadowedDirectionalLight
+            _shadowedDirectionalLights[_shadowedDirectionalLightCount] = new ShadowedDirectionalLight
             {
                 VisibleLightIndex = visibleLightIndex
             };
+            // 根据返回对应的shadowStrength和offset
+            return new Vector2(
+                light.shadowStrength, _shadowedDirectionalLightCount++);
         }
+        return Vector2.zero;
     }
 
     public void Cleanup()
@@ -124,4 +164,7 @@ public class Shadows
 
     // 使用_DirectionalShadowAtlas来在shader中引用阴影图集
     static int _directionalShadowAtlasID = Shader.PropertyToID("_DirectionalShadowAtlas");
+    // 每个光源的阴影矩阵
+    static int _directionalShadowMatricesID = Shader.PropertyToID("_DirectionalShadowMatrices");
+    static Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount];
 }

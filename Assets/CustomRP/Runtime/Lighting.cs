@@ -34,13 +34,14 @@ public class Lighting
         _buffer.SetGlobalInt(_dirLightCountID, visibleLights.Length);
         _buffer.SetGlobalVectorArray(_dirLightColorsID, _dirLightColors);
         _buffer.SetGlobalVectorArray(_dirLightDirectionsID, _dirLightDirections);
+        _buffer.SetGlobalVectorArray(_dirLightShadowDataID, _dirLightShadowData);
     }
 
     void SetupDirectionalLight(int index, ref VisibleLight visibleLight)
     {
         _dirLightColors[index] = visibleLight.finalColor;
         _dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2);
-        _shadows.ReserveDirectionalShadows(visibleLight.light, index);
+        _dirLightShadowData[index] = _shadows.ReserveDirectionalShadows(visibleLight.light, index);
     }
 
     public void Cleanup()
@@ -59,9 +60,11 @@ public class Lighting
     static int _dirLightCountID = Shader.PropertyToID("_DirectionalLightCount");
     static int _dirLightColorsID = Shader.PropertyToID("_DirectionalLightColors");
     static int _dirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
+    static int _dirLightShadowDataID = Shader.PropertyToID("_DirectionalLightShadowData");
 
     static Vector4[] _dirLightColors = new Vector4[MaxDirLightCount];
     static Vector4[] _dirLightDirections = new Vector4[MaxDirLightCount];
+    static Vector4[] _dirLightShadowData = new Vector4[MaxDirLightCount];
     
     CullingResults _cullingResults;
 

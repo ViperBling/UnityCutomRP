@@ -16,7 +16,7 @@ public class ShadowSettings
         _2048 = 2048, _4096 = 4096, _8192 = 8192
     }
     
-    [Min(0f)] public float maxDistance = 100f;
+    [Min(0f)] public float maxDistance = 100.0f;
 
     [System.Serializable]
     public struct Directional
