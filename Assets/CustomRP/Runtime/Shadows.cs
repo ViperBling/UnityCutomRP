@@ -43,13 +43,18 @@ public class Shadows
         _buffer.BeginSample(BufferName);
         ExecuteBuffer();
 
-        int split = _shadowedDirectionalLightCount <= 1 ? 1 : 2;
+        // 根据级联阴影的数量确定Tile和Split
+        int tiles = _shadowedDirectionalLightCount * _settings.directional.cascadeCount;
+        int split = tiles <= 1 ? 1 : tiles <= 4 ? 2 : 4;
         int tileSize = atlasSize / split;
         for (int i = 0; i < _shadowedDirectionalLightCount; i++)
         {
             RenderDirectionalShadows(i, split, tileSize);
         }
+        _buffer.SetGlobalInt(_cascadeCountID, _settings.directional.cascadeCount);
+        _buffer.SetGlobalVectorArray(_cascadeCullingSpheresID, _cascadeCullingSpheres);
         _buffer.SetGlobalMatrixArray(_directionalShadowMatricesID, _directionalShadowMatrices);
+        _buffer.SetGlobalFloat(_shadowDistanceID, _settings.maxDistance);
         _buffer.EndSample(BufferName);
         ExecuteBuffer();
     }
@@ -59,18 +64,34 @@ public class Shadows
         ShadowedDirectionalLight light = _shadowedDirectionalLights[index];
         // 新版本API添加了投射矩阵类型参数
         var shadowSettings = new ShadowDrawingSettings(_cullingResults, light.VisibleLightIndex, BatchCullingProjectionType.Orthographic);
-        // 根据一个视图和投影矩阵来确定阴影的投射范围
-        // 第一个参数是光源索引，第二、三、四用来控制级联阴影
-        _cullingResults.ComputeDirectionalShadowMatricesAndCullingPrimitives(
-            light.VisibleLightIndex, 0, 1, Vector3.zero, tileSize, 0.0f,
-            out Matrix4x4 viewMatrix, out Matrix4x4 projMatrix, out ShadowSplitData splitData);
-        shadowSettings.splitData = splitData;
-        // 根据每个光源的不同矩阵来分配
-        _directionalShadowMatrices[index] = ConvertToAtlasMatrix(
-            projMatrix * viewMatrix, SetTileViewport(index, split, tileSize), split);
-        _buffer.SetViewProjectionMatrices(viewMatrix, projMatrix);
-        ExecuteBuffer();
-        _context.DrawShadows(ref shadowSettings);
+        int cascadeCount = _settings.directional.cascadeCount;
+        int tileOffset = index * cascadeCount;
+        Vector3 ratios = _settings.directional.CascadeRatios;
+
+        for (int i = 0; i < cascadeCount; i++)
+        {
+            // 根据一个视图和投影矩阵来确定阴影的投射范围
+            // 第一个参数是光源索引，第二、三、四用来控制级联阴影
+            _cullingResults.ComputeDirectionalShadowMatricesAndCullingPrimitives(
+                light.VisibleLightIndex, 
+                i, cascadeCount, ratios, tileSize, 0.0f,
+                out Matrix4x4 viewMatrix, out Matrix4x4 projMatrix, out ShadowSplitData splitData);
+            shadowSettings.splitData = splitData;
+            // 从splitData中获取剔除球
+            if (index == 0)
+            {
+                Vector4 cullingSphere = splitData.cullingSphere;
+                cullingSphere.w *= cullingSphere.w;
+                _cascadeCullingSpheres[i] = cullingSphere;
+            }
+            int tileIndex = tileOffset + i;
+            // 根据每个光源的不同矩阵来分配
+            _directionalShadowMatrices[tileIndex] = ConvertToAtlasMatrix(
+                projMatrix * viewMatrix, SetTileViewport(tileIndex, split, tileSize), split);
+            _buffer.SetViewProjectionMatrices(viewMatrix, projMatrix);
+            ExecuteBuffer();
+            _context.DrawShadows(ref shadowSettings);
+        }
     }
 
     Vector2 SetTileViewport(int index, int split, float tileSize)
@@ -124,9 +145,7 @@ public class Shadows
             {
                 VisibleLightIndex = visibleLightIndex
             };
-            // 根据返回对应的shadowStrength和offset
-            return new Vector2(
-                light.shadowStrength, _shadowedDirectionalLightCount++);
+            return new Vector2(light.shadowStrength, _settings.directional.cascadeCount * _shadowedDirectionalLightCount++);
         }
         return Vector2.zero;
     }
@@ -160,11 +179,18 @@ public class Shadows
     ShadowSettings _settings;
 
     // 最多投射阴影的光源数量
-    const int MaxShadowedDirLightCount = 4;
+    const int MaxShadowedDirLightCount = 4, MaxCascades = 4;
 
     // 使用_DirectionalShadowAtlas来在shader中引用阴影图集
     static int _directionalShadowAtlasID = Shader.PropertyToID("_DirectionalShadowAtlas");
     // 每个光源的阴影矩阵
     static int _directionalShadowMatricesID = Shader.PropertyToID("_DirectionalShadowMatrices");
-    static Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount];
+    // 定义光源的剔除球
+    static int _cascadeCountID = Shader.PropertyToID("_CascadeCount");
+    static int _cascadeCullingSpheresID = Shader.PropertyToID("_CascadeCullingSpheres");
+    static int _shadowDistanceID = Shader.PropertyToID("_ShadowDistance");
+    
+    // 每个级联阴影贴图都有自己的Matrix，所以对每栈光要乘上其级联阴影贴图的数量
+    static Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount * MaxCascades];
+    static Vector4[] _cascadeCullingSpheres = new Vector4[MaxCascades];
 }

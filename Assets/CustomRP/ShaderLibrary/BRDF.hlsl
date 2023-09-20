@@ -96,7 +96,7 @@ float SpecularBRDF(Surface surface, BRDF brdf, Light light)
     return r2 / (d2 * max(0.1, LdotH) * normalization);
 }
 
-float DirectBRDF(Surface surface, BRDF brdf, Light light)
+float3 DirectBRDF(Surface surface, BRDF brdf, Light light)
 {
     return SpecularBRDF(surface, brdf, light) * brdf.specular + brdf.diffuse;
 }
