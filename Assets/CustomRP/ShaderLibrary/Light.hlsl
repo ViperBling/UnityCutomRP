@@ -26,6 +26,7 @@ DirectionalShadowData GetDirectionalShadowData(int index, ShadowData shadowData)
     DirectionalShadowData data;
     data.strength = _DirectionalLightShadowData[index].x * shadowData.strength;
     data.tileIndex = _DirectionalLightShadowData[index].y + shadowData.cascadeIndex;
+    data.normalBias = _DirectionalLightShadowData[index].z;
     return data;
 }
 
@@ -35,6 +36,6 @@ Light GetDirectionalLight(int index, Surface surfaceWS, ShadowData shadowData)
     light.color = _DirectionalLightColors[index].rgb;
     light.direction = _DirectionalLightDirections[index].xyz;
     DirectionalShadowData dirShadowData = GetDirectionalShadowData(index, shadowData);
-    light.attenuation = GetDirectionalShadowAttenuation(dirShadowData, surfaceWS);
+    light.attenuation = GetDirectionalShadowAttenuation(dirShadowData, shadowData, surfaceWS);
     return light;
 }

@@ -44,6 +44,13 @@ PSInput LitPassVertex(VSInput vsIn)
     UNITY_TRANSFER_INSTANCE_ID(vsIn, vsOut);
     float3 positionWS = TransformObjectToWorld(vsIn.positionOS);
     vsOut.positionCS = TransformWorldToHClip(positionWS);
+
+    #if UNITY_REVERSED_Z
+        vsOut.positionCS.z = min(vsOut.positionCS.z, vsOut.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+    #else
+        vsOut.positionCS.z = max(vsOut.positionCS.z, vsOut.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+    #endif
+    
     vsOut.positionWS = positionWS;
     vsOut.normalWS = TransformObjectToWorldNormal(vsIn.normalOS);
 
