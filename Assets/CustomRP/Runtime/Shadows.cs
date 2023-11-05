@@ -178,7 +178,7 @@ public class Shadows
     {
         public int VisibleLightIndex;
         public float SlopeScaleBias;
-        public float NearPlaneOffset;
+        public float NearPlaneOffset;   // 防止光源的视锥体近平面裁剪物体出现阴影错误
     }
     ShadowedDirectionalLight[] _shadowedDirectionalLights = new ShadowedDirectionalLight[MaxShadowedDirLightCount];
 
@@ -212,4 +212,5 @@ public class Shadows
     static Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount * MaxCascades];
     static Vector4[] _cascadeCullingSpheres = new Vector4[MaxCascades];
     static Vector4[] _cascadeData = new Vector4[MaxCascades];
+    static string[] directionalFilterKeywords = {"_DIRECTIONAL_PCF3", "_DIRECTIONAL_PCF5", "_DIRECTIONAL_PCF7"};
 }
