@@ -108,8 +108,8 @@ public partial class CameraRenderer
         name = BufferName
     };
 
-    static ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
-    static ShaderTagId _litShaderTagId = new ShaderTagId("CustomLit");
+    ShaderTagId _unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    ShaderTagId _litShaderTagId = new ShaderTagId("CustomLit");
 
     Lighting _lighting = new Lighting();
 }

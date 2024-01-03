@@ -60,8 +60,26 @@ public class Shadows
             1.0f / _settings.maxDistance, 
             1.0f / _settings.distanceFade, 
             1.0f / (1.0f - fade * fade)));
+        SetKeywords();
+        _buffer.SetGlobalVector(shadowAtlasSizeID, new Vector4(atlasSize, 1.0f / atlasSize));
         _buffer.EndSample(BufferName);
         ExecuteBuffer();
+    }
+
+    void SetKeywords()
+    {
+        int enabledIndex = (int)_settings.directional.filter - 1;
+        for (int i = 0; i < directionalFilterKeywords.Length; i++)
+        {
+            if (i == enabledIndex)
+            {
+                _buffer.EnableShaderKeyword(directionalFilterKeywords[i]);
+            }
+            else
+            {
+                _buffer.DisableShaderKeyword(directionalFilterKeywords[i]);
+            }
+        }
     }
 
     void RenderDirectionalShadows(int index, int split, int tileSize)
@@ -102,9 +120,11 @@ public class Shadows
     void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
     {
         float texelSize = 2.0f * cullingSphere.w / tileSize;
+        float filterSize = texelSize * ((float)_settings.directional.filter + 1.0f);
+        cullingSphere.w -= filterSize;
         cullingSphere.w *= cullingSphere.w;
         _cascadeCullingSpheres[index] = cullingSphere;
-        _cascadeData[index] = new Vector4(1.0f / cullingSphere.w, texelSize * 1.4142136f);
+        _cascadeData[index] = new Vector4(1.0f / cullingSphere.w, filterSize * 1.4142136f);
     }
 
     Vector2 SetTileViewport(int index, int split, float tileSize)
@@ -199,18 +219,19 @@ public class Shadows
     const int MaxShadowedDirLightCount = 4, MaxCascades = 4;
 
     // 使用_DirectionalShadowAtlas来在shader中引用阴影图集
-    static int _directionalShadowAtlasID = Shader.PropertyToID("_DirectionalShadowAtlas");
+    int _directionalShadowAtlasID = Shader.PropertyToID("_DirectionalShadowAtlas");
     // 每个光源的阴影矩阵
-    static int _directionalShadowMatricesID = Shader.PropertyToID("_DirectionalShadowMatrices");
+    int _directionalShadowMatricesID = Shader.PropertyToID("_DirectionalShadowMatrices");
     // 定义光源的剔除球
-    static int _cascadeCountID = Shader.PropertyToID("_CascadeCount");
-    static int _cascadeCullingSpheresID = Shader.PropertyToID("_CascadeCullingSpheres");
-    static int _cascadeDataID = Shader.PropertyToID("_CascadeData");
-    static int _shadowDistanceFadeID = Shader.PropertyToID("_ShadowDistanceFade");
+    int _cascadeCountID = Shader.PropertyToID("_CascadeCount");
+    int _cascadeCullingSpheresID = Shader.PropertyToID("_CascadeCullingSpheres");
+    int _cascadeDataID = Shader.PropertyToID("_CascadeData");
+    int shadowAtlasSizeID = Shader.PropertyToID("_ShadowAtlasSize");
+    int _shadowDistanceFadeID = Shader.PropertyToID("_ShadowDistanceFade");
     
     // 每个级联阴影贴图都有自己的Matrix，所以对每栈光要乘上其级联阴影贴图的数量
-    static Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount * MaxCascades];
-    static Vector4[] _cascadeCullingSpheres = new Vector4[MaxCascades];
-    static Vector4[] _cascadeData = new Vector4[MaxCascades];
-    static string[] directionalFilterKeywords = {"_DIRECTIONAL_PCF3", "_DIRECTIONAL_PCF5", "_DIRECTIONAL_PCF7"};
+    Matrix4x4[] _directionalShadowMatrices = new Matrix4x4[MaxShadowedDirLightCount * MaxCascades];
+    Vector4[] _cascadeCullingSpheres = new Vector4[MaxCascades];
+    Vector4[] _cascadeData = new Vector4[MaxCascades];
+    string[] directionalFilterKeywords = {"_DIRECTIONAL_PCF3", "_DIRECTIONAL_PCF5", "_DIRECTIONAL_PCF7"};
 }

@@ -57,14 +57,14 @@ public class Lighting
         name = BufferName
     };
 
-    static int _dirLightCountID = Shader.PropertyToID("_DirectionalLightCount");
-    static int _dirLightColorsID = Shader.PropertyToID("_DirectionalLightColors");
-    static int _dirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
-    static int _dirLightShadowDataID = Shader.PropertyToID("_DirectionalLightShadowData");
+    int _dirLightCountID = Shader.PropertyToID("_DirectionalLightCount");
+    int _dirLightColorsID = Shader.PropertyToID("_DirectionalLightColors");
+    int _dirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
+    int _dirLightShadowDataID = Shader.PropertyToID("_DirectionalLightShadowData");
 
-    static Vector4[] _dirLightColors = new Vector4[MaxDirLightCount];
-    static Vector4[] _dirLightDirections = new Vector4[MaxDirLightCount];
-    static Vector4[] _dirLightShadowData = new Vector4[MaxDirLightCount];
+    Vector4[] _dirLightColors = new Vector4[MaxDirLightCount];
+    Vector4[] _dirLightDirections = new Vector4[MaxDirLightCount];
+    Vector4[] _dirLightShadowData = new Vector4[MaxDirLightCount];
     
     CullingResults _cullingResults;
 
